@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Додати оголошення — BirdBoard</title>
+    <link rel="stylesheet" href="../style.css">
+
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/add-advertisement.js"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header__wrapper">
+                <img src="../icons/BirdBoard.svg" alt="logo">
+                <div class="header__content">
+                    <nav>
+                        <ul class="header__nav">
+                            <li><a href="../index.html">Головна</a></li>
+                            <li><a href="#!">Оголошення</a></li>
+                        </ul>
+                    </nav>
+            
+                    <div>
+                        <ul class="header__translation">
+                            <li>Укр</li>
+                            <li>Eng</li>
+                        </ul>
+                    </div>
+            
+                    <div class="header__btn">
+                        <a href="#!" onclick="checkAuthForAd()">Додати оголошення</a>
+                    </div>
+            
+                    <div class="header__account">
+                        <a href="#!" id="accountBtn">
+                            <img src="../icons/Аккаунт чорний.svg" alt="">
+                            Ваш профіль
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+            <section class="add-ad-section">
+                <h2>Додати оголошення</h2>
+                
+                <form id="adForm" class="ad-form">
+                    <!-- Основна інформація -->
+                    <div class="form-group">
+                        <label for="adTitle">Заголовок оголошення *</label>
+                        <input type="text" id="adTitle" placeholder="Наприклад: Хвилястий папуга, ручний" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="adDescription">Опис *</label>
+                        <textarea id="adDescription" placeholder="Опишіть вашего папугу..." maxlength="1000" required></textarea>
+                        <div class="char-counter">
+                            <span id="charCount">0</span>/1000 символів
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="adPrice">Ціна (грн) *</label>
+                        <input type="number" id="adPrice" placeholder="1000" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="adLocation">Місцезнаходження *</label>
+                        <input type="text" id="adLocation" placeholder="Наприклад: Київ, Оболонський район" required>
+                    </div>
+
+                    <!-- Завантаження фото -->
+                    <div class="form-group">
+                        <label>Фотографії (макс. 5) *</label>
+                        <div class="image-upload-container">
+                            <div id="uploadArea" class="upload-area">
+                                <div class="upload-placeholder">
+                                    <span>+</span>
+                                    <p>Перетягніть фото сюди або натисніть для вибору</p>
+                                </div>
+                            </div>
+                            <input type="file" id="imageUpload" accept="image/*" multiple style="display: none;">
+                            <div id="imagePreview" class="image-preview"></div>
+                        </div>
+                    </div>
+
+                    <!-- Характеристики -->
+                    <div class="characteristics">
+                        <div class="characteristic-row">
+                            <div class="char-group">
+                                <label for="adSpecies">Вид папуги *</label>
+                                <select id="adSpecies" required>
+                                    <option value="">Оберіть вид</option>
+                                    <option value="Хвилястий папуга">Хвилястий папуга</option>
+                                    <option value="Корела">Корела</option>
+                                    <option value="Нерозлучник">Нерозлучник</option>
+                                    <option value="Жако">Жако</option>
+                                    <option value="Ара">Ара</option>
+                                    <option value="Амазон">Амазон</option>
+                                    <option value="Какаду">Какаду</option>
+                                    <option value="Какарікі">Какарікі</option>
+                                    <option value="Піррура">Піррура</option>
+                                    <option value="Аратинга">Аратинга</option>
+                                </select>
+                            </div>
+                            
+                            <div class="char-group">
+                                <label for="adGender">Стать</label>
+                                <select id="adGender">
+                                    <option value="">Не вказано</option>
+                                    <option value="Самець">Самець</option>
+                                    <option value="Самиця">Самиця</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="characteristic-row">
+                            <div class="char-group">
+                                <label for="adHealth">Стан здоров'я</label>
+                                <select id="adHealth">
+                                    <option value="">Не вказано</option>
+                                    <option value="Здоровий">Здоровий</option>
+                                    <option value="Потребує лікування">Потребує лікування</option>
+                                    <option value="Хронічні захворювання">Хронічні захворювання</option>
+                                </select>
+                            </div>
+                            
+                            <div class="char-group">
+                                <label for="adTemper">Характер</label>
+                                <select id="adTemper">
+                                    <option value="">Не вказано</option>
+                                    <option value="Спокійний">Спокійний</option>
+                                    <option value="Активний">Активний</option>
+                                    <option value="Голосливий">Голосливий</option>
+                                    <option value="Ручний">Ручний</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Кнопки -->
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary">Опублікувати</button>
+                    </div>
+                </form>
+            </section>
+        </div>
+    </main>
+</body>
+</html>

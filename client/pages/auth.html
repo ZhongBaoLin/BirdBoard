@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Реєстрація — BirdBoard</title>
+  <link rel="stylesheet" href="../style.css">
+
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+</head>
+<body>
+    <div class="content">
+        <img src="../images/parrots.png.webp" alt="">
+        <div class="auth">
+            <h2 id="authTitle">Реєстрація</h2>
+        
+            <form id="authForm">
+            <div class="auth__group auth__extra">
+                <input type="text" id="lastName" placeholder="Прізвище" required>
+                <input type="text" id="firstName" placeholder="Ім'я" required>
+                <input type="text" id="middleName" placeholder="По батькові" required>
+                <input type="tel" id="phone" placeholder="Номер телефону" required pattern="[0-9+() -]{10,}">
+                <input type="email" id="email" placeholder="Email" required>
+            </div>
+        
+            <div class="auth__group">
+                <input type="text" id="username" placeholder="Логін" required>
+                <input type="password" id="password" placeholder="Пароль" required>
+            </div>
+        
+            <button type="submit">Зареєструватися</button>
+            </form>
+        
+            <p id="switchText">
+            Вже маєте аккаунт?
+            <a href="#" id="switchLink">Увійти</a>
+            </p>
+        </div>
+    </div>
+
+  <script>
+    // Додаткова ініціалізація для сторінки авторизації
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Сторінка авторизації завантажена');
+        if (typeof initAuthForm === 'function') {
+            initAuthForm();
+        }
+    });
+  </script>
+</body>
+</html>

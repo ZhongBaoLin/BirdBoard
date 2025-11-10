@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="../css/adv.css">
+    <title>Оголошення - BirdBoard</title>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header__wrapper">
+                <img src="../icons/BirdBoard.svg" alt="logo">
+                <div class="header__content">
+                    <nav>
+                        <ul class="header__nav">
+                            <li><a href="../index.html">Головна</a></li>
+                            <li><a href="../index.html#advertisements">Оголошення</a></li>
+                        </ul>
+                    </nav>
+            
+                    <div>
+                        <ul class="header__translation">
+                            <li>Укр</li>
+                            <li>Eng</li>
+                        </ul>
+                    </div>
+            
+                    <div class="header__btn">
+                        <a href="#!" onclick="checkAuthForAd()">Додати оголошення</a>
+                    </div>
+            
+                    <div class="header__account">
+                        <a href="../pages/auth.html">
+                            <img src="../icons/Аккаунт чорний.svg" alt="">
+                            Ваш профіль
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="breadcrumb">
+        <div class="container">
+            
+                <a href="../index.html">← Повернутись до оголошень</a>
+            </div>
+
+            <div id="ad-content" class="ad-content">
+                <div class="loading">Завантаження оголошення...</div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Модальне вікно для поширення -->
+    <div id="share-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3>Поділитися оголошенням</h3>
+            <div class="url-container">
+                <input type="text" id="share-url" class="url-input" readonly>
+                <button id="copy-url" class="modal-btn primary">Копіювати</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальне вікно для збільшеного перегляду фото -->
+    <div id="zoom-modal" class="zoom-modal">
+        <span class="zoom-close">&times;</span>
+        <button class="zoom-nav zoom-prev">‹</button>
+        <div class="zoom-content">
+            <img id="zoom-image" class="zoom-image" src="" alt="">
+            <div class="zoom-counter">
+                <span id="zoom-current">1</span> / <span id="zoom-total">1</span>
+            </div>
+        </div>
+        <button class="zoom-nav zoom-next">›</button>
+    </div>
+
+    <!-- Сповіщення -->
+    <div id="notification" class="notification">Посилання скопійовано!</div>
+
+    <footer>
+        <div class="container">
+            <p>© 2025 BirdBoard. Всі права захищені.</p>
+        </div>
+    </footer>
+    
+    <script>
+        // Глобальні змінні для збільшення фото
+        let currentZoomIndex = 0;
+        let currentAdImages = [];
+        // Глобальні змінні для редагування
+        let originalAdData = null;
+        let isEditMode = false;
+
+
+        // Функція для отримання ID з URL
+        function getAdIdFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('id');
+        }
+
+
+        // Функція для відкриття збільшеного зображення
+        function openZoomModal(imageIndex, images) {
+            currentAdImages = images;
+            currentZoomIndex = imageIndex;
+            
+            const zoomModal = document.getElementById('zoom-modal');
+            const zoomImage = document.getElementById('zoom-image');
+            const zoomCurrent = document.getElementById('zoom-current');
+            const zoomTotal = document.getElementById('zoom-total');
+            
+            if (zoomModal && zoomImage && images.length > 0) {
+                // Отримуємо правильний шлях до зображення
+                const imageSrc = getImagePath(images[imageIndex]);
+                zoomImage.src = imageSrc;
+                zoomCurrent.textContent = imageIndex + 1;
+                zoomTotal.textContent = images.length;
+                zoomModal.style.display = 'flex';
+                
+                // Блокуємо прокрутку сторінки
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        // Функція для отримання шляху до зображення
+        function getImagePath(image) {
+            if (image.path) {
+                // Серверне зображення
+                return `http://localhost:3000${image.path}`;
+            } else if (image.data) {
+                // LocalStorage зображення (data URL)
+                return image.data;
+            }
+            return '../images/placeholder-bird.jpg';
+        }
+
+        // Функція для закриття збільшеного зображення
+        function closeZoomModal() {
+            const zoomModal = document.getElementById('zoom-modal');
+            if (zoomModal) {
+                zoomModal.style.display = 'none';
+                // Відновлюємо прокрутку сторінки
+                document.body.style.overflow = 'auto';
+            }
+        }
+
+        // Функція для навігації між зображеннями
+        function navigateZoom(direction) {
+            if (currentAdImages.length === 0) return;
+            
+            if (direction === 'next') {
+                currentZoomIndex = (currentZoomIndex + 1) % currentAdImages.length;
+            } else if (direction === 'prev') {
+                currentZoomIndex = (currentZoomIndex - 1 + currentAdImages.length) % currentAdImages.length;
+            }
+            
+            const zoomImage = document.getElementById('zoom-image');
+            const zoomCurrent = document.getElementById('zoom-current');
+            
+            if (zoomImage) {
+                const imageSrc = getImagePath(currentAdImages[currentZoomIndex]);
+                zoomImage.src = imageSrc;
+                zoomCurrent.textContent = currentZoomIndex + 1;
+            }
+        }
+
+        // Функція для обробки клавіш клавіатури
+        function handleKeyboardZoom(e) {
+            const zoomModal = document.getElementById('zoom-modal');
+            if (zoomModal.style.display === 'flex') {
+                switch(e.key) {
+                    case 'Escape':
+                        closeZoomModal();
+                        break;
+                    case 'ArrowLeft':
+                        navigateZoom('prev');
+                        break;
+                    case 'ArrowRight':
+                        navigateZoom('next');
+                        break;
+                }
+            }
+        }
+
+        // Функція для налаштування галереї зображень
+        function setupGallery(adData) {
+            console.log('Налаштування галереї...');
+            
+            const thumbnails = document.querySelectorAll('.thumbnail');
+            const mainImage = document.getElementById('main-image-img');
+            
+            console.log('Знайдено мініатюр:', thumbnails.length);
+            console.log('Знайдено головне зображення:', !!mainImage);
+            
+            if (thumbnails.length > 0 && mainImage) {
+                thumbnails.forEach((thumb, index) => {
+                    thumb.addEventListener('click', function() {
+                        console.log('Клік на мініатюру:', index);
+                        const imageSrc = this.getAttribute('data-image');
+                        
+                        console.log('Змінюємо головне зображення на:', imageSrc);
+                        mainImage.src = imageSrc;
+                        
+                        // Оновлюємо активний стан
+                        thumbnails.forEach(t => t.classList.remove('active'));
+                        this.classList.add('active');
+                    });
+                });
+            }
+            
+            // Додаємо обробник кліку для збільшення головного зображення
+            if (mainImage && adData.images && adData.images.length > 0) {
+                mainImage.addEventListener('click', function() {
+                    console.log('Клік на головне зображення для зуму');
+                    let currentIndex = 0;
+                    
+                    // Знаходимо індекс поточного зображення
+                    const thumbnails = document.querySelectorAll('.thumbnail');
+                    thumbnails.forEach((thumb, index) => {
+                        if (thumb.classList.contains('active')) {
+                            currentIndex = index;
+                        }
+                    });
+                    
+                    console.log('Відкриваємо зум для зображення:', currentIndex);
+                    openZoomModal(currentIndex, adData.images);
+                });
+            }
+        }
+
+        function formatPublishDate(dateString) {
+            const publishDate = new Date(dateString);
+            const currentDate = new Date();
+            const diffTime = currentDate - publishDate;
+            
+            const diffMinutes = Math.floor(diffTime / (1000 * 60));
+            const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffMinutes < 1) {
+                return 'Опубліковано щойно';
+            } else if (diffMinutes < 60) {
+                return `Опубліковано ${diffMinutes} ${getMinutesText(diffMinutes)} тому`;
+            } else if (diffHours < 24) {
+                return `Опубліковано ${diffHours} ${getHoursText(diffHours)} тому`;
+            } else if (diffDays === 1) {
+                return 'Опубліковано 1 день тому';
+            } else if (diffDays < 3) {
+                return `Опубліковано ${diffDays} дні тому`;
+            } else {
+                return `Опубліковано ${publishDate.toLocaleDateString('uk-UA')}`;
+            }
+        }
+
+        // Допоміжні функції для правильного відмінювання
+        function getMinutesText(minutes) {
+            if (minutes === 1) return 'хвилину';
+            if (minutes >= 2 && minutes <= 4) return 'хвилини';
+            return 'хвилин';
+        }
+
+        function getHoursText(hours) {
+            if (hours === 1) return 'годину';
+            if (hours >= 2 && hours <= 4) return 'години';
+            return 'годин';
+        }
+
+        // Функція для завантаження даних оголошення з сервера
+        async function loadAdData(adId) {
+            console.log('Шукаємо оголошення з ID:', adId);
+            
+            try {
+                const adData = await BirdBoardAPI.getAdvertisementById(adId);
+                
+                if (!adData) {
+                    document.getElementById('ad-content').innerHTML = `
+                        <div class="loading">
+                            Оголошення не знайдено<br>
+                            <small>ID: ${adId}</small>
+                            <br><br>
+                            <a href="../index.html" style="color: #3498db; text-decoration: underline;">Повернутися до оголошень</a>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                console.log('Оголошення знайдено:', adData.title);
+                console.log('Кількість фото:', adData.images ? adData.images.length : 0);
+                displayAdDetails(adData);
+                
+            } catch (error) {
+                console.error('Помилка завантаження оголошення:', error);
+                document.getElementById('ad-content').innerHTML = `
+                    <div class="loading">
+                        Помилка завантаження оголошення<br>
+                        <small>${error.message}</small>
+                        <br><br>
+                        <a href="../index.html" style="color: #3498db; text-decoration: underline;">Повернутися до оголошень</a>
+                    </div>
+                `;
+            }
+        }
+
+        // Функція для відображення деталей оголошення
+        function displayAdDetails(adData) {
+            console.log('Відображення деталей оголошення...');
+            
+            // Оновлюємо заголовок сторінки
+            document.title = `${adData.title} - BirdBoard`;
+            
+            // Генеруємо HTML згідно з дизайном зображення
+            const finalHTML = generateAdHTML(adData);
+            
+            document.getElementById('ad-content').innerHTML = finalHTML;
+            
+            // Додаємо обробники подій ПІСЛЯ того, як HTML був доданий до DOM
+            setTimeout(() => {
+                setupGallery(adData);
+                setupEventHandlers(adData);
+            }, 0);
+            
+            console.log('Оголошення успішно відображено');
+        }
+
+        // Функція для генерації HTML оголошення
+            function generateAdHTML(adData) {
+                // Визначаємо, чи поточний користувач є власником
+                const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                const isOwner = currentUser && currentUser.username === adData.author?.username;
+
+                const mainImage = adData.images && adData.images.length > 0 
+                    ? getImagePath(adData.images[0])
+                    : '../images/placeholder-bird.jpg';
+
+                // Основний контент
+                return `
+                    <div class="ad-layout">
+                        <div class="ad-main">
+                            <!-- Галерея -->
+                            <div class="gallery ad-card">
+                                <div class="main-image">
+                                    <img src="${mainImage}" alt="${adData.title}" id="main-image-img">
+                                </div>
+                                <div class="thumbnail-container" id="thumbnail-container">
+                                    ${adData.images && adData.images.length > 0 ? adData.images.map((image, index) => `
+                                        <div class="thumbnail ${index === 0 ? 'active' : ''}" data-image="${getImagePath(image)}" data-index="${index}">
+                                            <img src="${getImagePath(image)}" alt="${adData.title} - фото ${index + 1}">
+                                            <button class="remove-image-btn" onclick="removeImage(${index})" style="display: none;">×</button>
+                                        </div>
+                                    `).join('') : ''}
+                                    <div class="add-image-btn" id="add-image-btn" style="display: none;" onclick="addNewImage()">
+                                        +
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Опис та характеристики -->
+                            <div class="description-section">
+                                <h2 class="section-title">Опис</h2>
+                                <div class="description-text">
+                                    <span class="editable-text" id="editable-description">${adData.description || 'Опис відсутній'}</span>
+                                </div>
+                                
+                                <div class="characteristics-row">
+                                    <div class="characteristic-item">
+                                        <span class="characteristic-label">Порода:</span>
+                                        <span class="editable-text" id="editable-species">${adData.characteristics?.species || 'Не вказано'}</span>
+                                        <select class="editable-select" id="select-species" style="display: none;">
+                                            <option value="">Оберіть вид</option>
+                                            <option value="Хвилястий папуга">Хвилястий папуга</option>
+                                            <option value="Корелла">Корелла</option>
+                                            <option value="Нерозлучник">Нерозлучник</option>
+                                            <option value="Жако">Жако</option>
+                                            <option value="Ара">Ара</option>
+                                            <option value="Амазон">Амазон</option>
+                                            <option value="Какаду">Какаду</option>
+                                            <option value="Какарікі">Какарікі</option>
+                                            <option value="Інший">Інший</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="characteristic-item">
+                                        <span class="characteristic-label">Стать:</span>
+                                        <span class="editable-text" id="editable-gender">${adData.characteristics?.gender || 'Не вказано'}</span>
+                                        <select class="editable-select" id="select-gender" style="display: none;">
+                                            <option value="">Не вказано</option>
+                                            <option value="Самець">Самець</option>
+                                            <option value="Самиця">Самиця</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="characteristics-row">
+                                    <div class="characteristic-item">
+                                        <span class="characteristic-label">Стан здоров'я:</span>
+                                        <span class="editable-text" id="editable-health">${adData.characteristics?.health || 'Не вказано'}</span>
+                                        <select class="editable-select" id="select-health" style="display: none;">
+                                            <option value="">Не вказано</option>
+                                            <option value="Здоровий">Здоровий</option>
+                                            <option value="Потребує лікування">Потребує лікування</option>
+                                            <option value="Хронічне захворювання">Хронічне захворювання</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="characteristic-item">
+                                        <span class="characteristic-label">Характер:</span>
+                                        <span class="editable-text" id="editable-temper">${adData.characteristics?.temper || 'Не вказано'}</span>
+                                        <select class="editable-select" id="select-temper" style="display: none;">
+                                            <option value="">Не вказано</option>
+                                            <option value="Спокійний">Спокійний</option>
+                                            <option value="Активний">Активний</option>
+                                            <option value="Голосливий">Голосливий</option>
+                                            <option value="Дружній">Дружній</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="ad-sidebar">
+                            <!-- Інформація про оголошення -->
+                            <div class="ad-card">
+                                <h1 class="ad-title">
+                                    <div class="editable" id="editable-title" contenteditable="false">
+                                        ${adData.title || 'Без назви'}
+                                    </div>
+                                </h1>
+                                <div class="ad-price">
+                                    <div class="editable" id="editable-price" contenteditable="false">
+                                        ${adData.price || 0} грн
+                                    </div>
+                                </div>
+                                <div class="ad-meta">
+                                    <div class="location">
+                                        <img src="../icons/Геолокація.svg" alt="" class="location-icon">
+                                        <div class="editable" id="editable-location" contenteditable="false">
+                                            ${adData.location || 'Місцезнаходження не вказано'}
+                                        </div>
+                                    </div>
+                                    <div class="date">
+                                        <img src="../icons/Календар.svg" alt="" class="date-icon">
+                                        ${formatPublishDate(adData.date)}
+                                    </div>
+                                </div>
+                                
+                                <div class="action-buttons">
+                                    <button class="btn btn-message">
+                                        <img src="../icons/СМС.svg" alt="" class="btn-icon">
+                                        <span>Написати повідомлення</span>
+                                    </button>
+                                    
+                                    <div class="favorite-share-row">
+                                        <button class="btn btn-favorite" id="favorite-btn">
+                                            <img src="../icons/Серце.svg" alt="" class="btn-icon">
+                                            <span>Обране</span>
+                                        </button>
+                                        <button class="btn btn-share" id="share-btn">
+                                            <img src="../icons/Поділитись.svg" alt="" class="btn-icon">
+                                            <span>Поділитися</span>
+                                        </button>
+                                    </div>
+                                    
+                                    ${isOwner ? `
+                                        <div class="owner-actions">
+                                            <button class="btn btn-edit" id="edit-toggle-btn">
+                                                ✏️ Редагувати
+                                            </button>
+                                            <button class="btn btn-delete" id="delete-btn" style="display: none;">
+                                                🗑️ Видалити
+                                            </button>
+                                            <button class="btn btn-save" id="save-btn" style="display: none;">
+                                                💾 Зберегти
+                                            </button>
+                                            <button class="btn btn-cancel" id="cancel-btn" style="display: none;">
+                                                ❌ Скасувати
+                                            </button>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+
+                            <!-- Інформація про продавця -->
+                            <div class="ad-card">
+                                <div class="user-info">
+                                    <div class="user-avatar">
+                                        ${adData.author?.avatar 
+                                            ? `<img src="${adData.author.avatar}" alt="${adData.author.firstName}">`
+                                            : `<div>${(adData.author?.firstName || 'К').charAt(0).toUpperCase()}</div>`
+                                        }
+                                    </div>
+                                    <div class="user-name">${adData.author?.firstName || 'Користувач'} ${adData.author?.lastName || ''}</div>
+                                </div>
+                                
+                                <div class="contact-info">
+                                    <div class="contact-item">
+                                        <img src="../icons/Телефон.svg" alt="" class="contact-icon">
+                                        <div>${adData.author?.phone || 'Телефон не вказано'}</div>
+                                    </div>
+                                    <div class="contact-item">
+                                        <img src="../icons/Пошта.svg" alt="" class="contact-icon">
+                                        <div>${adData.author?.email || 'Email не вказано'}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+
+
+        // Налаштування обробників подій
+        function setupEventHandlers(adData) {
+            // Додаємо обробники для модального вікна збільшення
+            const zoomModal = document.getElementById('zoom-modal');
+            const zoomClose = document.querySelector('.zoom-close');
+            const zoomPrev = document.querySelector('.zoom-prev');
+            const zoomNext = document.querySelector('.zoom-next');
+            
+            if (zoomModal) {
+                // Закриття при кліку на затемнений фон
+                zoomModal.addEventListener('click', function(e) {
+                    if (e.target === zoomModal) {
+                        closeZoomModal();
+                    }
+                });
+                
+                // Обробник клавіш клавіатури
+                document.addEventListener('keydown', handleKeyboardZoom);
+            }
+            
+            if (zoomClose) {
+                zoomClose.addEventListener('click', closeZoomModal);
+            }
+            
+            if (zoomPrev) {
+                zoomPrev.addEventListener('click', function() {
+                    navigateZoom('prev');
+                });
+            }
+            
+            if (zoomNext) {
+                zoomNext.addEventListener('click', function() {
+                    navigateZoom('next');
+                });
+            }
+
+            // Кнопка "Обране"
+            const favoriteBtn = document.getElementById('favorite-btn');
+            if (favoriteBtn) {
+                favoriteBtn.addEventListener('click', function() {
+                    this.classList.toggle('active');
+                    this.innerHTML = this.classList.contains('active') 
+                        ? '<img src="../icons/Серце.svg" alt="" class="btn-icon"><span>В обраному</span>' 
+                        : '<img src="../icons/Серце.svg" alt="" class="btn-icon"><span>Обране</span>';
+                    showMessage(this.classList.contains('active') ? 'Додано в обране' : 'Видалено з обраного', 'success');
+                });
+            }
+            
+            // Кнопка "Поділитися"
+            const shareBtn = document.getElementById('share-btn');
+            const shareModal = document.getElementById('share-modal');
+            if (shareBtn && shareModal) {
+                shareBtn.addEventListener('click', function() {
+                    const shareUrl = document.getElementById('share-url');
+                    if (shareUrl) {
+                        shareUrl.value = window.location.href;
+                        shareModal.style.display = 'flex';
+                    }
+                });
+                
+                const closeModal = shareModal.querySelector('.close-modal');
+                if (closeModal) {
+                    closeModal.addEventListener('click', function() {
+                        shareModal.style.display = 'none';
+                    });
+                }
+                
+                const copyBtn = document.getElementById('copy-url');
+                const notification = document.getElementById('notification');
+                if (copyBtn && notification) {
+                    copyBtn.addEventListener('click', function() {
+                        const shareUrl = document.getElementById('share-url');
+                        if (shareUrl) {
+                            shareUrl.select();
+                            document.execCommand('copy');
+                            notification.style.display = 'block';
+                            setTimeout(() => {
+                                notification.style.display = 'none';
+                            }, 2000);
+                        }
+                    });
+                }
+                
+                // Закриваємо модальне вікно при кліку поза ним
+                shareModal.addEventListener('click', function(e) {
+                    if (e.target === shareModal) {
+                        shareModal.style.display = 'none';
+                    }
+                });
+            }
+
+            // Кнопка "Написати повідомлення"
+            const messageBtn = document.querySelector('.btn-message');
+            if (messageBtn) {
+                messageBtn.addEventListener('click', function() {
+                    showMessage('Функція повідомлень буде доступна найближчим часом!', 'info');
+                });
+            }
+
+            // Зберегти початкові зображення
+            currentAdImages = adData.images || [];
+            
+            // Обробники для редагування
+            const editToggleBtn = document.getElementById('edit-toggle-btn');
+            const saveBtn = document.getElementById('save-btn');
+            const cancelBtn = document.getElementById('cancel-btn');
+            const deleteBtn = document.getElementById('delete-btn');
+            
+            if (editToggleBtn) {
+                editToggleBtn.addEventListener('click', enableEditMode);
+            }
+            
+            if (saveBtn) {
+                saveBtn.addEventListener('click', saveChanges);
+            }
+            
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', cancelEdit);
+            }
+            
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', deleteAdvertisement);
+            }
+
+        }
+
+
+        // Головна функція ініціалізації
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('=== ЗАВАНТАЖЕННЯ СТОРІНКИ ОГОЛОШЕННЯ ===');
+            
+            const adId = getAdIdFromURL();
+            if (adId) {
+                loadAdData(adId);
+            } else {
+                document.getElementById('ad-content').innerHTML = `
+                    <div class="loading">
+                        Помилка: ID оголошення не вказано в URL<br>
+                        <small>Перевірте посилання</small>
+                    </div>
+                `;
+                console.error('ID оголошення не вказано');
+            }
+        });
+
+        // Функція для редагування оголошення
+        function editAdvertisement(adId) {
+            window.location.href = `edit-advertisement.html?id=${adId}`;
+        }
+
+        // Увімкнення режиму редагування
+        function enableEditMode() {
+            console.log('Увімкнення режиму редагування');
+            
+            if (isEditMode) return;
+            
+            isEditMode = true;
+            document.body.classList.add('edit-mode');
+            
+            // Зберігаємо оригінальні дані
+            originalAdData = {
+                title: document.getElementById('editable-title').textContent,
+                description: document.getElementById('editable-description').textContent,
+                price: document.getElementById('editable-price').textContent.replace(' грн', ''),
+                location: document.getElementById('editable-location').textContent,
+                species: document.getElementById('editable-species').textContent,
+                gender: document.getElementById('editable-gender').textContent,
+                health: document.getElementById('editable-health').textContent,
+                temper: document.getElementById('editable-temper').textContent
+            };
+            
+            // Перетворити текстові поля на input/textarea
+            convertToEditableFields();
+            
+            // Показати кнопки видалення фото
+            document.querySelectorAll('.remove-image-btn').forEach(btn => {
+                btn.style.display = 'flex';
+            });
+            
+            // Показати кнопку додавання фото
+            const addImageBtn = document.getElementById('add-image-btn');
+            if (addImageBtn) {
+                addImageBtn.style.display = 'flex';
+            }
+            
+            // Сховати кнопки "Обране" та "Поділитися"
+            document.getElementById('favorite-btn').style.display = 'none';
+            document.getElementById('share-btn').style.display = 'none';
+            
+            // Показати кнопки редагування
+            document.getElementById('edit-toggle-btn').style.display = 'none';
+            document.getElementById('delete-btn').style.display = 'flex';
+            document.getElementById('save-btn').style.display = 'flex';
+            document.getElementById('cancel-btn').style.display = 'flex';
+        }
+
+        // Конвертація полів у редагуємі
+        function convertToEditableFields() {
+            // Назва
+            const titleElement = document.getElementById('editable-title');
+            const titleInput = document.createElement('input');
+            titleInput.type = 'text';
+            titleInput.value = titleElement.textContent;
+            titleInput.className = 'editable-input';
+            titleInput.id = 'edit-title-input';
+            titleElement.parentNode.replaceChild(titleInput, titleElement);
+            
+            // Опис
+            const descElement = document.getElementById('editable-description');
+            const descTextarea = document.createElement('textarea');
+            descTextarea.value = descElement.textContent;
+            descTextarea.className = 'editable-textarea';
+            descTextarea.id = 'edit-desc-input';
+            descElement.parentNode.replaceChild(descTextarea, descElement);
+            
+            // Ціна
+            const priceElement = document.getElementById('editable-price');
+            const priceInput = document.createElement('input');
+            priceInput.type = 'number';
+            priceInput.value = priceElement.textContent.replace(' грн', '');
+            priceInput.className = 'editable-input';
+            priceInput.id = 'edit-price-input';
+            priceElement.parentNode.replaceChild(priceInput, priceElement);
+            
+            // Місце
+            const locationElement = document.getElementById('editable-location');
+            const locationInput = document.createElement('input');
+            locationInput.type = 'text';
+            locationInput.value = locationElement.textContent;
+            locationInput.className = 'editable-input';
+            locationInput.id = 'edit-location-input';
+            locationElement.parentNode.replaceChild(locationInput, locationElement);
+            
+            // Характеристики - замінити тексти на селекти
+            convertCharacteristicsToSelects();
+        }
+
+        // Конвертація характеристик у випадаючі списки
+        function convertCharacteristicsToSelects() {
+            const characteristics = ['species', 'gender', 'health', 'temper'];
+            
+            characteristics.forEach(char => {
+                const textElement = document.getElementById(`editable-${char}`);
+                const selectElement = document.getElementById(`select-${char}`);
+                
+                if (textElement && selectElement) {
+                    // Встановити значення селекта
+                    selectElement.value = textElement.textContent;
+                    // Показати селект, сховати текст
+                    textElement.style.display = 'none';
+                    selectElement.style.display = 'block';
+                }
+            });
+        }
+
+        // Відновлення текстових полів
+        function restoreTextFields() {
+            const characteristics = ['species', 'gender', 'health', 'temper'];
+            
+            characteristics.forEach(char => {
+                const textElement = document.getElementById(`editable-${char}`);
+                const selectElement = document.getElementById(`select-${char}`);
+                
+                if (textElement && selectElement) {
+                    // Оновити текст значенням з селекта
+                    textElement.textContent = selectElement.value || 'Не вказано';
+                    // Показати текст, сховати селект
+                    textElement.style.display = 'block';
+                    selectElement.style.display = 'none';
+                }
+            });
+        }
+
+
+        // Вимкнення режиму редагування
+        function disableEditMode() {
+            console.log('Вимкнення режиму редагування');
+            
+            if (!isEditMode) return;
+            
+            isEditMode = false;
+            document.body.classList.remove('edit-mode');
+            
+            // Сховати кнопки видалення фото
+            document.querySelectorAll('.remove-image-btn').forEach(btn => {
+                btn.style.display = 'none';
+            });
+            
+            // Сховати кнопку додавання фото
+            const addImageBtn = document.getElementById('add-image-btn');
+            if (addImageBtn) {
+                addImageBtn.style.display = 'none';
+            }
+            
+            // Показати кнопки "Обране" та "Поділитися"
+            const favoriteBtn = document.getElementById('favorite-btn');
+            const shareBtn = document.getElementById('share-btn');
+            if (favoriteBtn) favoriteBtn.style.display = 'flex';
+            if (shareBtn) shareBtn.style.display = 'flex';
+            
+            // Сховати кнопки редагування
+            const editToggleBtn = document.getElementById('edit-toggle-btn');
+            const deleteBtn = document.getElementById('delete-btn');
+            const saveBtn = document.getElementById('save-btn');
+            const cancelBtn = document.getElementById('cancel-btn');
+            
+            if (editToggleBtn) editToggleBtn.style.display = 'flex';
+            if (deleteBtn) deleteBtn.style.display = 'none';
+            if (saveBtn) saveBtn.style.display = 'none';
+            if (cancelBtn) cancelBtn.style.display = 'none';
+        }
+
+        // Скасувати редагування
+        function cancelEdit() {
+            console.log('Скасування редагування');
+            
+            if (!originalAdData) return;
+            
+            // Відновити оригінальні значення в input полях
+            const titleInput = document.getElementById('edit-title-input');
+            const descTextarea = document.getElementById('edit-desc-input');
+            const priceInput = document.getElementById('edit-price-input');
+            const locationInput = document.getElementById('edit-location-input');
+            
+            if (titleInput) titleInput.value = originalAdData.title;
+            if (descTextarea) descTextarea.value = originalAdData.description;
+            if (priceInput) priceInput.value = originalAdData.price;
+            if (locationInput) locationInput.value = originalAdData.location;
+            
+            // Відновити характеристики в селектах
+            const speciesSelect = document.getElementById('select-species');
+            const genderSelect = document.getElementById('select-gender');
+            const healthSelect = document.getElementById('select-health');
+            const temperSelect = document.getElementById('select-temper');
+            
+            if (speciesSelect) speciesSelect.value = originalAdData.species;
+            if (genderSelect) genderSelect.value = originalAdData.gender;
+            if (healthSelect) healthSelect.value = originalAdData.health;
+            if (temperSelect) temperSelect.value = originalAdData.temper;
+            
+            disableEditMode();
+            
+            // Повністю перезавантажити сторінку для відновлення початкового стану
+            setTimeout(() => {
+                window.location.reload();
+            }, 100);
+        }
+
+        // Зберегти зміни
+        async function saveChanges() {
+            try {
+                console.log('Збереження змін...');
+                
+                const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                if (!currentUser) {
+                    showMessage('Помилка авторизації', 'error');
+                    return;
+                }
+
+                const adId = getAdIdFromURL();
+                
+                // Отримати значення з input полів
+                const titleInput = document.getElementById('edit-title-input');
+                const descTextarea = document.getElementById('edit-desc-input');
+                const priceInput = document.getElementById('edit-price-input');
+                const locationInput = document.getElementById('edit-location-input');
+                const speciesSelect = document.getElementById('select-species');
+                const genderSelect = document.getElementById('select-gender');
+                const healthSelect = document.getElementById('select-health');
+                const temperSelect = document.getElementById('select-temper');
+
+                if (!titleInput || !descTextarea || !priceInput || !locationInput) {
+                    showMessage('Помилка: поля редагування не знайдені', 'error');
+                    return;
+                }
+
+                const updatedData = {
+                    title: titleInput.value.trim(),
+                    description: descTextarea.value.trim(),
+                    price: parseInt(priceInput.value.trim()),
+                    location: locationInput.value.trim(),
+                    characteristics: {
+                        species: speciesSelect ? speciesSelect.value : '',
+                        gender: genderSelect ? genderSelect.value : '',
+                        health: healthSelect ? healthSelect.value : '',
+                        temper: temperSelect ? temperSelect.value : ''
+                    },
+                    author: {
+                        username: currentUser.username,
+                        firstName: currentUser.firstName,
+                        lastName: currentUser.lastName,
+                        phone: currentUser.phone,
+                        email: currentUser.email,
+                        avatar: currentUser.avatar
+                    },
+                    images: currentAdImages
+                };
+
+                console.log('Оновлені дані:', updatedData);
+
+                // Валідація
+                if (!updatedData.title || !updatedData.description || !updatedData.price || !updatedData.location) {
+                    showMessage('Будь ласка, заповніть всі обов\'язкові поля', 'error');
+                    return;
+                }
+
+                if (isNaN(updatedData.price) || updatedData.price < 0) {
+                    showMessage('Будь ласка, введіть коректну ціну', 'error');
+                    return;
+                }
+
+                if (updatedData.images.length === 0) {
+                    showMessage('Будь ласка, додайте хоча б одне фото', 'error');
+                    return;
+                }
+
+                showMessage('Збереження змін...', 'info');
+                
+                const result = await BirdBoardAPI.updateAdvertisement(adId, updatedData);
+                console.log('Оголошення оновлено:', result);
+                
+                showMessage('Зміни успішно збережено!', 'success');
+                
+                // Повністю перезавантажити сторінку
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+                
+            } catch (error) {
+                console.error('Помилка збереження:', error);
+                showMessage(`Помилка при збереженні: ${error.message}`, 'error');
+            }
+        }
+
+    // Видалити зображення
+    function removeImage(index) {
+        if (currentAdImages.length <= 1) {
+            showMessage('Повинно залишитися хоча б одне фото', 'error');
+            return;
+        }
+        
+        currentAdImages.splice(index, 1);
+        
+        // Оновити галерею
+        updateGallery();
+    }
+
+    // Додати нове зображення
+    function addNewImage() {
+        if (currentAdImages.length >= 5) {
+            showMessage('Можна додати не більше 5 фото', 'error');
+            return;
+        }
+        
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = 'image/*';
+        fileInput.multiple = true;
+        
+        fileInput.onchange = function(e) {
+            const files = e.target.files;
+            if (!files || files.length === 0) return;
+            
+            const totalImages = currentAdImages.length + files.length;
+            if (totalImages > 5) {
+                showMessage('Можна додати не більше 5 фото всього', 'error');
+                return;
+            }
+            
+            for (let file of files) {
+                if (!file.type.match('image.*')) {
+                    showMessage('Будь ласка, вибирайте тільки зображення', 'error');
+                    continue;
+                }
+                
+                if (file.size > 5 * 1024 * 1024) {
+                    showMessage(`Файл "${file.name}" занадто великий (макс. 5MB)`, 'error');
+                    continue;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    currentAdImages.push({
+                        name: file.name,
+                        data: e.target.result
+                    });
+                    updateGallery();
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+        
+        fileInput.click();
+    }
+
+    // Оновити галерею
+    function updateGallery() {
+        const thumbnailContainer = document.getElementById('thumbnail-container');
+        if (!thumbnailContainer) return;
+        
+        thumbnailContainer.innerHTML = '';
+        
+        // Додати існуючі фото
+        currentAdImages.forEach((image, index) => {
+            const thumbnail = document.createElement('div');
+            thumbnail.className = `thumbnail ${index === 0 ? 'active' : ''}`;
+            thumbnail.setAttribute('data-image', getImagePath(image));
+            thumbnail.setAttribute('data-index', index);
+            
+            thumbnail.innerHTML = `
+                <img src="${getImagePath(image)}" alt="Фото ${index + 1}">
+                <button class="remove-image-btn" onclick="removeImage(${index})">×</button>
+            `;
+            
+            // Додати обробник кліку для зміни головного зображення
+            thumbnail.addEventListener('click', function(e) {
+                if (!e.target.classList.contains('remove-image-btn')) {
+                    const mainImage = document.getElementById('main-image-img');
+                    if (mainImage) {
+                        mainImage.src = this.getAttribute('data-image');
+                    }
+                    
+                    // Оновити активний стан
+                    document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                }
+            });
+            
+            thumbnailContainer.appendChild(thumbnail);
+        });
+        
+        // Додати кнопку додавання фото
+        const addImageBtn = document.createElement('div');
+        addImageBtn.className = 'add-image-btn';
+        addImageBtn.id = 'add-image-btn';
+        addImageBtn.innerHTML = '+';
+        addImageBtn.onclick = addNewImage;
+        thumbnailContainer.appendChild(addImageBtn);
+    }
+
+    // Видалити оголошення
+    async function deleteAdvertisement() {
+        if (!confirm('Ви впевнені, що хочете видалити це оголошення? Цю дію неможливо скасувати.')) {
+            return;
+        }
+        
+        try {
+            const adId = getAdIdFromURL();
+            showMessage('Видалення оголошення...', 'info');
+            
+            await BirdBoardAPI.deleteAdvertisement(adId);
+            showMessage('Оголошення успішно видалено!', 'success');
+            
+            setTimeout(() => {
+                window.location.href = '../index.html';
+            }, 1500);
+            
+        } catch (error) {
+            console.error('Помилка видалення:', error);
+            showMessage(`Помилка при видаленні: ${error.message}`, 'error');
+        }
+    }
+    </script>
+</body>
+</html>
