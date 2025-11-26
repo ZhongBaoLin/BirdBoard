@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../style.css">
+  <title>Мій профіль | BirdBoard</title>
+  <style>
+    /* Додаткові стилі для модального вікна */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-content {
+        background: white;
+        padding: 40px;
+        border-radius: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        max-width: 500px;
+        width: 90%;
+        text-align: center;
+        position: relative;
+    }
+
+    .close-modal {
+        position: absolute;
+        top: 15px;
+        right: 20px;
+        font-size: 28px;
+        cursor: pointer;
+        color: #666;
+    }
+
+    .close-modal:hover {
+        color: #333;
+    }
+
+    .modal-actions {
+        margin-top: 30px;
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+    }
+
+    .modal-btn {
+        padding: 12px 25px;
+        border: none;
+        border-radius: 10px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-family: "Golos Text", sans-serif;
+    }
+
+    .modal-btn.primary {
+        background: linear-gradient(90deg, #aadc4b, #ffd155, #ff973c);
+        color: white;
+    }
+
+    .modal-btn.secondary {
+        background: rgba(141, 141, 141, 1);
+        color: white;
+    }
+
+    .modal-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+    }
+  </style>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/profile.js"></script>
+    <script src="./js/burger.js"></script>
+</head>
+<body>
+  <header class="header">
+    <div class="container">
+      <div class="header__wrapper">
+        <img src="../icons/BirdBoard.svg" alt="logo">
+        <div class="header__content">
+          <nav>
+            <ul class="header__nav">
+              <li><a href="../index.html">Головна</a></li>
+              <li><a href="../index.html#advertisements">Оголошення</a></li>
+            </ul>
+          </nav>
+          <div>
+            <ul class="header__translation">
+              <li>Укр</li>
+              <li>Eng</li>
+            </ul>
+          </div>
+          <div class="header__btn">
+            <a href="#!" onclick="checkAuthForAd()">Додати оголошення</a>
+          </div>
+          <div class="header__account">
+            <a href="../pages/auth.html">
+              <img src="../icons/Аккаунт чорний.svg" alt="">
+              Ваш профіль
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="profile-section">
+        <h2>Мій профіль</h2>
+        
+        <!-- Блок аватарки -->
+        <div class="avatar-section">
+            <div class="avatar-display">
+                <div id="avatarContainer" class="avatar-container"></div>
+            </div>
+            <div class="avatar-controls">
+                <label for="avatarUpload" class="upload-btn">
+                    📷 Завантажити аватарку
+                </label>
+                <input type="file" id="avatarUpload" accept="image/*" style="display: none;">
+            </div>
+        </div>
+        
+        <div class="profile-data">
+            <p><span class="label">Ім'я:</span> <span class="value" id="profileName">Завантаження...</span></p>
+            <p><span class="label">Прізвище:</span> <span class="value" id="profileSurname">Завантаження...</span></p>
+            <p><span class="label">По батькові:</span> <span class="value" id="profilePatronymic">Завантаження...</span></p>
+            <p><span class="label">Телефон:</span> <span class="value" id="profilePhone">Завантаження...</span></p>
+            <p><span class="label">Email:</span> <span class="value" id="profileEmail">Завантаження...</span></p>
+            <p><span class="label">Логін:</span> <span class="value" id="profileLogin">Завантаження...</span></p>
+        </div>
+        
+        <div class="profile-actions">
+            <button id="editProfileBtn">Редагувати</button>
+            <button id="saveProfileBtn" style="display:none;">Зберегти зміни</button>
+            <button id="logoutBtn">Вийти з акаунту</button>
+        </div>
+    </section>
+
+        <!-- Оверлей для мобільного меню -->
+    <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+
+      <!-- Модальне вікно для незареєстрованих користувачів -->
+    <div id="authModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3>Увійдіть в систему</h3>
+            <p>Щоб додати оголошення, будь ласка, увійдіть в свій акаунт або зареєструйтесь.</p>
+            <div class="modal-actions">
+                <button onclick="window.location.href='./auth.html'" class="modal-btn primary">Увійти/Зареєструватись</button>
+                <button class="modal-btn secondary close-modal">Скасувати</button>
+            </div>
+        </div>
+    </div>
+  </main>
+
+
+
+  <script>
+    // Функція для перевірки авторизації
+    function checkAuthForAd() {
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        if (!currentUser) {
+            showAuthModal();
+            return false;
+        }
+        window.location.href = './add-advertisement.html';
+        return true;
+    }
+
+    // Показ модального вікна авторизації
+    function showAuthModal() {
+        const modal = document.getElementById('authModal');
+        if (modal) {
+            modal.style.display = 'flex';
+        }
+    }
+
+    // Ініціалізація сторінки профілю
+    function initProfilePage() {
+        console.log('=== ІНІЦІАЛІЗАЦІЯ СТОРІНКИ ПРОФІЛЮ ===');
+        
+        // Перевірка авторизації
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        console.log('Поточний користувач:', currentUser);
+        
+        if (!currentUser) {
+            console.log('❌ Користувач не авторизований, перенаправляємо...');
+            window.location.href = '../index.html';
+            return;
+        }
+
+        // Оновлюємо хедер
+        if (typeof updateHeader === 'function') {
+            updateHeader();
+        }
+        
+        // Завантажуємо дані профілю
+        if (typeof loadProfileData === 'function') {
+            console.log('Викликаємо loadProfileData...');
+            loadProfileData();
+        } else if (typeof updateProfileData === 'function') {
+            console.log('Викликаємо updateProfileData...');
+            updateProfileData();
+        } else {
+            console.log('❌ Жодна з функцій завантаження профілю не знайдена');
+        }
+
+        // Додаємо обробник для кнопки "Додати оголошення"
+        const addAdBtn = document.querySelector('.header__btn a');
+        if (addAdBtn) {
+            addAdBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                checkAuthForAd();
+            });
+        }
+
+        // Ініціалізація модального вікна
+        const modal = document.getElementById('authModal');
+        if (modal) {
+            const closeBtn = modal.querySelector('.close-modal');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function() {
+                    modal.style.display = 'none';
+                });
+            }
+            
+            // Закриття при кліку поза модальним вікном
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        }
+
+        console.log('✅ Сторінка профілю ініціалізована');
+    }
+
+    // Запускаємо ініціалізацію при повному завантаженні сторінки
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM готовий, запускаємо ініціалізацію профілю...');
+        setTimeout(initProfilePage, 100);
+    });
+  </script>
+</body>
+</html>
