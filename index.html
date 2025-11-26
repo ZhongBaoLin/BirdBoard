@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="./style.css">
+    <title>BirdBoard</title>
+
+    <script src="./js/api.js"></script>
+    <script src="./js/auth.js"></script>
+    <script src="./js/add-advertisement.js"></script>
+    <script src="./js/burger.js"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header__wrapper">
+                <img src="./icons/BirdBoard.svg" alt="logo" class="header__logo">
+                <div class="header__content">
+                    <nav class="header__nav">
+                        <ul class="nav__list">
+                            <li><a href="./index.html">Головна</a></li>
+                            <li><a href="#advertisements" onclick="scrollToAdvertisements()">Оголошення</a></li>
+                        </ul>
+                    </nav>
+            
+                    <div class="header__translation">
+                        <ul>
+                            <li>Укр</li>
+                            <li>Eng</li>
+                        </ul>
+                    </div>
+            
+                    <div class="header__btn">
+                        <a href="#!" id="addAdBtn">Додати оголошення</a>
+                    </div>
+            
+                    <div class="header__account">
+                        <a href="./pages/auth.html" id="profileLink">
+                            <img src="./icons/Аккаунт чорний.svg" alt="">
+                            Ваш профіль
+                        </a>
+                    </div>
+
+                    <!-- Бургер-меню -->
+                    <div class="burger-menu" id="burgerMenu">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Мобільне меню -->
+    <div class="mobile-menu" id="mobileMenu">
+        <nav class="mobile-nav">
+            <ul>
+                <li><a href="./index.html">Головна</a></li>
+                <li><a href="#advertisements" onclick="scrollToAdvertisements()">Оголошення</a></li>
+            </ul>
+        </nav>
+        <div class="mobile-translation">
+            <span>Укр</span>
+            <span>Eng</span>
+        </div>
+        <div class="mobile-actions">
+            <a href="#!" class="mobile-btn" id="mobileAddAdBtn">Додати оголошення</a>
+            <a href="./pages/auth.html" class="mobile-profile">Ваш профіль</a>
+        </div>
+    </div>
+
+    <!-- Оверлей для мобільного меню -->
+    <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+
+    <div id="authStatus"></div>
+    <main>
+        <!-- Інший контент залишається без змін -->
+        <section class="hero">
+            <div class="container">
+                <div class="hero__content">
+                    <h1>Знайди свого пернатого друга</h1>
+                    <p class="hero__description"><span>BirdBoard</span> — це найбільша платформа в Україні для купівлі та продажу папуг. Наша місія — з'єднувати відповідальних власників з пернатими друзями, забезпечуючи прозорість та безпеку кожної угоди.</p>
+                    
+                    <div class="hero__dignity">
+                        <div class="dignity__item">
+                            <div class="dignity__icon"><img src="./icons/Серце.svg" alt=""></div>
+                            <h2>Турбота про птахів</h2>
+                            <p>Ми допомагаємо знайти люблячу домівку для кожної пташки, яка цього потребує</p>
+                        </div>
+                        <div class="dignity__item">
+                            <div class="dignity__icon"><img src="./icons/Щит.svg" alt=""></div>
+                            <h2>Турбота про птахів</h2>
+                            <p>Ми допомагаємо знайти люблячу домівку для кожної пташки, яка цього потребує</p>
+                        </div>
+                        <div class="dignity__item">
+                            <div class="dignity__icon"><img src="./icons/Спільнота.svg"  alt=""></div>
+                            <h2>Турбота про птахів</h2>
+                            <p>Ми допомагаємо знайти люблячу домівку для кожної пташки, яка цього потребує</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hero__decoration">
+                <img src="./images/листя 1.svg" alt="">
+                <img src="./images/листя 2.svg" alt="">
+            </div>
+        </section>
+
+        <section class="search">
+            <div class="container">
+                <form class="search__form">
+                    <select class="search__select" id="citySelect">
+                        <option value="">Місто</option>
+                        <!-- Міста будуть додаватись автоматично -->
+                    </select>
+
+                    <input type="text" class="search__input" placeholder="Знайти папугу" id="searchInput">
+
+                    <select class="search__select" id="genderSelect">
+                        <option value="">Стать папуги</option>
+                        <option value="Самець">Самець</option>
+                        <option value="Самиця">Самиця</option>
+                        <!-- Додаємо варіант для невказаної статі -->
+                        <option value="Невідомо">Невідомо</option>
+                    </select>
+
+                    <button type="submit" class="search__btn">
+                        <img src="./icons/Лупа.svg" alt="">Шукати
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <section>
+            <div class="container">
+                <div class="popular__types">
+                    <h3>Популярні види папуг</h3>
+                    <div class="bird__category">
+                        <div class="category__item">
+                            <img src="./images/category/Хвилястий папуга.svg" alt="">
+                            <h4>Хвилястий папуга</h4>
+                            <p>оголошень</p>
+                        </div>
+                        <div class="category__item">
+                            <img src="./images/category/Корела.svg" alt="">
+                            <h4>Корела</h4>
+                            <p>оголошень</p>
+                        </div>
+                        <div class="category__item">
+                            <img src="./images/category/Нерозлучник.svg" alt="">
+                            <h4>Нерозлучник</h4>
+                            <p>оголошень</p>
+                        </div>
+                        <div class="category__item">
+                            <img src="./images/category/Жако.svg" alt="">
+                            <h4>Жако</h4>
+                            <p>оголошень</p>
+                        </div>
+                        <div class="category__item">
+                            <img src="./images/category/Ара.svg" alt="">
+                            <h4>Ара</h4>
+                            <p>оголошень</p>
+                        </div>
+                        <div class="category__item">
+                            <img src="./images/category/Амазон.svg" alt="">
+                            <h4>Амазон</h4>
+                            <p>оголошень</p>
+                        </div>
+                        <div class="category__item">
+                            <img src="./images/category/Какаду.svg" alt="">
+                            <h4>Какаду</h4>
+                            <p>оголошень</p>
+                        </div>
+                        <div class="category__item">
+                            <img src="./images/category/Какарікі.svg" alt="">
+                            <h4>Какарікі</h4>
+                            <p>оголошень</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="advertisements">
+            <div class="container">
+                <div class="advert">
+                    <h3>Нещодавні оголошення <span class="count" id="adsCount"></span></h3>
+                        <div class="advertisements-grid" id="advertisementsGrid">
+                            <!-- Картки будуть генеруватись через JavaScript -->
+                        </div>
+                </div>
+            </div>
+        </section>
+        <!-- Модальне вікно для незареєстрованих користувачів -->
+        <div id="authModal" class="modal">
+            <div class="modal-content">
+                <span class="close-modal">&times;</span>
+                <h3>Увійдіть в систему</h3>
+                <p>Щоб додати оголошення, будь ласка, увійдіть в свій акаунт або зареєструйтесь.</p>
+                <div class="modal-actions">
+                    <button onclick="window.location.href='./pages/auth.html'" class="modal-btn primary">Увійти/Зареєструватись</button>
+                    <button class="modal-btn secondary close-modal">Скасувати</button>
+                </div>
+            </div>
+        </div>
+    </main>
+    <footer>
+        <div class="container">
+            <p>© 2025 BirdBoard. Всі права захищені.</p>
+        </div>
+    </footer>
+
+    
+</body>
+</html>
